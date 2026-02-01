@@ -2,12 +2,20 @@ from fastapi import FastAPI, HTTPException
 import sqlite3
 from app.database import get_db_connection
 from app.models import UserCreate, TaskCreate, WorkSpaceCreate
+from fastapi.middleware.cors import CORSMiddleware
 import hashlib 
 
 def hash_password(password: str) -> str: 
     return hashlib.sha256(password.encode()).hexdigest()
 
 app = FastAPI(title="task_manager")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/register")
 
@@ -22,6 +30,8 @@ def register(user: UserCreate):
             conn.commit()
             return {"user_id": cursor.lastrowid, "username": user.username}
         raise HTTPException(status_code=400, detail="Username already exist")
+    except HTTPException as e:
+        raise e
     except sqlite3.Error as e:
         # If the DB crashes, we see the REAL error in the terminal
         print(f"DATABASE ERROR: {e}") 
@@ -33,8 +43,27 @@ def register(user: UserCreate):
     finally:
         conn.close()
 
-@app.post("/workspaces/")
+@app.post("/login")
+def login(user:UserCreate):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        res = cur.execute("SELECT * FROM users WHERE username = ? AND password = ?", (user.username, hash_password(user.password))).fetchone()
+        if res:
+            return {"user_id": res["id"], "username": user.username}
+        else:
+            raise HTTPException(status_code=401, detail="User not found or wrong password")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        # If there's a bug in your logic, we see it here
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
 
+
+@app.post("/workspaces")
 def create_workspace(workspace: WorkSpaceCreate):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -42,7 +71,23 @@ def create_workspace(workspace: WorkSpaceCreate):
     try:
         cursor.execute("INSERT INTO workspaces (name, owner_id) VALUES (? , ?)", (workspace.name, workspace.owner_id))
         conn.commit()
-        return {"workspace_id": cursor.lastrowid, "name": workspace.name}
+        return {"id": cursor.lastrowid, "name": workspace.name}
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
+
+@app.get("/workspaces/{user_id}")
+def get_workspaces(user_id:int):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        res = cur.execute("SELECT * FROM workspaces WHERE owner_id = ?", (user_id ,))
+        return [dict(row) for row in res]
     except sqlite3.Error as e:
         print(f"DATABASE ERROR: {e}") 
         raise HTTPException(status_code=500, detail="Database connection issue")
@@ -131,22 +176,19 @@ def delete_task(task_id: int):
 def delete_workspace(workspace_id: int):
     conn = get_db_connection()
     cur = conn.cursor()
-
     try:
-        cur.execute("DELETE FROM workspaces WHERE id = ?", (workspace_id ,))
+        # Since you have ON DELETE CASCADE, this one line kills the workspace AND its tasks
+        cur.execute("DELETE FROM workspaces WHERE id = ?", (workspace_id,))
         conn.commit()
         return {'message': "workspace deleted"}
     except sqlite3.Error as e:
         print(f"DATABASE ERROR: {e}") 
-        raise HTTPException(status_code=500, detail="Database connection issue")
-    except Exception as e:
-        print(f"LOGIC ERROR: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail="Database error")
     finally:
         conn.close()
 
 @app.delete("/users/{user_id}")
-def delete_workspace(user_id: int):
+def delete_user(user_id: int):
     conn = get_db_connection()
     cur = conn.cursor()
 
