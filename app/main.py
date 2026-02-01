@@ -51,4 +51,114 @@ def create_workspace(workspace: WorkSpaceCreate):
         raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         conn.close()
-       
+
+@app.post("/tasks")
+def add_task(task: TaskCreate):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("INSERT INTO tasks (content, workspace_id) VALUES (?, ?)", (task.content, task.workspace_id))
+        conn.commit()
+        return {"task_id": cur.lastrowid, "content": task.content, "status": "pending"}
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
+
+
+@app.get("/workspaces/{workspace_id}/tasks")
+def get_tasks(workspace_id: int):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        results = cur.execute("SELECT id, content, status FROM tasks WHERE workspace_id = ?", (workspace_id,))
+        return [dict(row) for row in results]
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
+
+@app.put("/tasks/{task_id}")
+def update_task(updated_task: TaskCreate, task_id: int):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+        UPDATE tasks
+        SET content = ?,
+            status = ?
+        WHERE id = ?
+        """, (updated_task.content, updated_task.status, task_id))
+        conn.commit()
+        return {"message": "task updated"}
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute('DELETE FROM tasks WHERE id = ?', (task_id ,))
+        conn.commit()
+        return {"message": "task deleted"}
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
+
+@app.delete("/workspaces/{workspace_id}")
+def delete_workspace(workspace_id: int):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("DELETE FROM workspaces WHERE id = ?", (workspace_id ,))
+        conn.commit()
+        return {'message': "workspace deleted"}
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()
+
+@app.delete("/users/{user_id}")
+def delete_workspace(user_id: int):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("DELETE FROM users WHERE id = ?", (user_id ,))
+        conn.commit()
+        return {'message': "user deleted"}
+    except sqlite3.Error as e:
+        print(f"DATABASE ERROR: {e}") 
+        raise HTTPException(status_code=500, detail="Database connection issue")
+    except Exception as e:
+        print(f"LOGIC ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    finally:
+        conn.close()

@@ -10,4 +10,5 @@ class WorkSpaceCreate(BaseModel):
 
 class TaskCreate(BaseModel):
     content: str
+    status: str
     workspace_id: int
