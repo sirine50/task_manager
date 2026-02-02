@@ -33,6 +33,7 @@ def create_tables():
             FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
         )
     """)
+    
 
     conn.commit()
     conn.close()

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, LogOut, Bell, UserX } from 'lucide-react';
 
-const Navbar = ({ username, onLogout }) => {
+const Navbar = ({ username, onLogout, onDeleteAccount }) => {
   return (
     <nav className="h-16 border-b border-gray-800 bg-gray-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center gap-2">
@@ -32,7 +32,7 @@ const Navbar = ({ username, onLogout }) => {
           <LogOut size={20} />
         </button>
         <button 
-            onClick={() => { if(window.confirm("Delete account? This cannot be undone.")) onUpdateUser('delete'); }}
+            onClick={() => { if(window.confirm("Delete account? This cannot be undone.")) onDeleteAccount(); }}
             className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors group mr-2"
             title="Delete Account"
             >

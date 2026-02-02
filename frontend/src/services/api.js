@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { LogIn } from 'lucide-react';
 
 const API = axios.create({
     baseURL: 'http://127.0.0.1:8000',
@@ -20,6 +19,14 @@ export const authAPI = {
             return response.data
         } catch (error) {
             throw error.response?.data?.detail || "login failed";   
+        }
+    },
+    deleteUser: async (user_id) => {
+        try {
+            const response = await API.delete(`/users/${user_id}`)
+            return response.data
+        } catch (error) {
+            throw error.response?.data?.detail || "failed to delete the user";
         }
     }
 }
@@ -50,4 +57,39 @@ export const workspacesAPI = {
         }
         
     } 
+}
+
+export const tasksAPI = {
+    addTask: async (data) => {
+        try {
+            const response = await API.post("/tasks", data)
+            return response.data
+        } catch (error) {
+            throw error.response?.data?.detail || "failed to add the task";
+        }
+    },
+    gettasks: async (workspace_id) => {
+        try {
+            const response = await API.get(`/workspaces/${workspace_id}/tasks`)
+            return response.data
+        } catch (error) {
+            throw error.response?.data?.detail || "failed to get the tasks"
+        }
+    },
+    updateTask: async (data, task_id) => {
+        try {
+            const response = await API.put(`/tasks/${task_id}`, data)
+            return response.data
+        } catch (error) {
+            throw error.response?.data?.detail || "failed to update the task"
+        }
+    },
+    deleteTask: async (task_id) => {
+        try {
+            const response = await API.delete(`/tasks/${task_id}`)
+            return response.data
+        } catch (error) {
+            throw error.response?.data?.detail || "failed to delete the task"
+        }
+    }
 }

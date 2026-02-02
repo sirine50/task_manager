@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TaskCard from './TaskCard';
 import { PlusCircle } from 'lucide-react';
 
-const TaskBoard = ({ tasks }) => {
+const TaskBoard = ({ tasks, onAddTask, onToggleTask, onUpdateTaskContent,onDeleteTask }) => {
+  const [taskInput, setTaskInput] = useState("");
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && taskInput.trim()) {
+      onAddTask(taskInput);
+      setTaskInput(""); // Clear input after adding
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Quick Add Input */}
@@ -12,15 +21,26 @@ const TaskBoard = ({ tasks }) => {
         </div>
         <input 
           type="text"
+          value={taskInput}
+          onChange={(e) => setTaskInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Add a new task to this workspace..."
-          className="w-full bg-gray-800/50 border border-gray-700 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-gray-600"
+          className="w-full bg-gray-800/50 border border-gray-700 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-gray-600 text-white"
         />
       </div>
 
       {/* Task List */}
       <div className="grid grid-cols-1 gap-3">
         {tasks.length > 0 ? (
-          tasks.map(task => <TaskCard key={task.id} task={task} />)
+          tasks.map(task => (
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+              onToggle={() => onToggleTask(task)}
+              onDelete={() => onDeleteTask(task.id)}
+              onUpdateContent={onUpdateTaskContent}
+            />
+          ))
         ) : (
           <div className="text-center py-20 border-2 border-dashed border-gray-800 rounded-3xl text-gray-600">
             <p>No tasks found in this workspace.</p>
