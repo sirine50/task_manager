@@ -36,9 +36,9 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 
 2. Frontend Setup
-Bash
 cd frontend
 # Install dependencies
 npm install
 # Start the application
 npm run dev
+
